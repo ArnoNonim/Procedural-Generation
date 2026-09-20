@@ -2,15 +2,22 @@ using _00_Main._01_Scripts.SO;
 using TriInspector;
 using UnityEngine;
 
-namespace _00_Main._01_Scripts
+namespace _00_Main._01_Scripts.Demo
 {
+    [System.Serializable]
+    public struct CursorTextures
+    {
+        public Texture2D cursorUp;
+        public Texture2D cursorDown;
+    }
+    
     public class CursorManager : MonoBehaviour
     {
         public static CursorManager Instance { get; private set; }
-        [field:SerializeField] public PlayerInputSO PlayerInput { get; private set; }
-        
-        [SerializeField] private Texture2D cursorUp;
-        [SerializeField] private Texture2D cursorDown;
+        [field: SerializeField] public PlayerInputSO PlayerInput { get; private set; }
+
+        [InfoBox("평상시와 눌렸을 때의 텍스쳐 크기가 같아야 합니다")]
+        [InlineProperty, HideLabel, SerializeField] private CursorTextures cursorSettings;
 
         [InfoBox("$" + nameof(HotspotTooltip))]
         [SerializeField] private Vector2 hotspot;
@@ -19,18 +26,15 @@ namespace _00_Main._01_Scripts
         {
             get
             {
-                if (cursorUp == null) return "커서 이미지를 등록해 주세요";
-                return $"현재 사용하고 있는 커서 텍스쳐의 크기는 {cursorUp.width}x{cursorUp.height} 입니다";
+                if (cursorSettings.cursorUp == null) return "커서 이미지를 등록해 주세요";
+                return $"현재 사용하고 있는 커서 텍스쳐의 크기는 {cursorSettings.cursorUp.width}x{cursorSettings.cursorUp.height} 입니다";
             }
         }
         
         private void Awake()
         {
             if (Instance == null)
-            {
                 Instance = this;
-                DontDestroyOnLoad(this);
-            }
             else
                 Destroy(this);
             
@@ -56,7 +60,7 @@ namespace _00_Main._01_Scripts
 
         private void ChangeCursorTexture(bool toggle = false)
         {
-            Cursor.SetCursor(toggle ? cursorDown : cursorUp, hotspot, CursorMode.ForceSoftware);
+            Cursor.SetCursor(toggle ? cursorSettings.cursorDown : cursorSettings.cursorUp, hotspot, CursorMode.ForceSoftware);
         }
         
         private void CursorToggle(bool toggle)

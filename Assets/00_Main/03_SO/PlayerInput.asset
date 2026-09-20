@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80961e5813e57704780661ee6ad01a86, type: 3}
   m_Name: PlayerInput
   m_EditorClassIdentifier: Assembly-CSharp::_00_Main._01_Scripts.SO.PlayerInputSO
-  moveDir: {x: 0, y: 0}
+  <ScrollAxis>k__BackingField: 0
+  <IsClicking>k__BackingField: 0

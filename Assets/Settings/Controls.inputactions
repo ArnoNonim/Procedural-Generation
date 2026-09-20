@@ -17,7 +17,7 @@
                     "priority": 0
                 },
                 {
-                    "name": "Click",
+                    "name": "MouseLeftClick",
                     "type": "Button",
                     "id": "6d7341f0-8f2d-47fa-8d13-14905140c519",
                     "expectedControlType": "",
@@ -37,10 +37,20 @@
                     "priority": 0
                 },
                 {
-                    "name": "BreakAreaScroll",
+                    "name": "MouseScroll",
                     "type": "PassThrough",
                     "id": "6422f9e3-50c5-433d-b7ad-733ce95e4db0",
                     "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Shift",
+                    "type": "Button",
+                    "id": "74cd9eb3-b8a1-47cd-afde-d0646d29a232",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false,
@@ -165,7 +175,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "Click",
+                    "action": "MouseLeftClick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -176,7 +186,18 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "BreakAreaScroll",
+                    "action": "MouseScroll",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bf86e0c5-4a50-4b98-aa13-562a7cfc0a40",
+                    "path": "<Keyboard>/shift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Shift",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

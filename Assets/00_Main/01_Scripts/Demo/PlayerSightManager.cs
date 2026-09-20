@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace _00_Main._01_Scripts.Demo
 {
-    [RequireComponent(typeof(Rigidbody2D))]
-    public class PlayerSightMovementDemo : MonoBehaviour
+    public class PlayerSightManager : MonoBehaviour
     {
+        public static PlayerSightManager Instance { get; private set; }
         [field: SerializeField] public PlayerInputSO PlayerInput { get; private set; }
 
         public float moveSpeed = 5f;
@@ -13,12 +13,20 @@ namespace _00_Main._01_Scripts.Demo
         public int zoomSpeed = 1000;
         public float minZoom = -30f;
         public float maxZoom = -5f;
+
+        [SerializeField] private Transform pivot;
         
         private Rigidbody2D _rb;
 
         private void Awake()
         {
-            _rb = GetComponent<Rigidbody2D>();
+            if (Instance == null)
+                Instance = this;
+            else
+                Destroy(this);
+            
+            if(pivot != null)
+                _rb = pivot.GetComponent<Rigidbody2D>();
         }
 
         private void OnEnable()
@@ -28,16 +36,15 @@ namespace _00_Main._01_Scripts.Demo
 
         private void Update()
         {
-            if (PlayerInput.ScrollAxis != 0)
-            {
-                Vector3 camPos = transform.position;
+            if (PlayerInput.IsShift || PlayerInput.ScrollY == 0) return;
+            
+            Vector3 camPos = pivot.position;
 
-                camPos.z += PlayerInput.ScrollAxis * zoomSpeed * Time.deltaTime;
+            camPos.z += PlayerInput.ScrollY * zoomSpeed * Time.deltaTime;
 
-                camPos.z = Mathf.Clamp(camPos.z, minZoom, maxZoom);
+            camPos.z = Mathf.Clamp(camPos.z, minZoom, maxZoom);
 
-                transform.position = camPos;
-            }
+            pivot.position = camPos;
         }
 
         private void Movement(Vector2 moveDir)

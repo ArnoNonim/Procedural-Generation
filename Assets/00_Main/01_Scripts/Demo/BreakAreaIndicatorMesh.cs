@@ -16,7 +16,7 @@ namespace _00_Main._01_Scripts.Demo
     {
         [field:SerializeField] public PlayerInputSO PlayerInput { get; private set; }
         
-        [SerializeField] private TileBreakDemo tileBreakDemo;
+        [SerializeField] private TileBreaker tileBreaker;
 
         [Header("Appearance")]
         [Tooltip("각 타일에 입힐 텍스처. 비워두면 흰색 단색으로 표시됨.")]
@@ -26,7 +26,7 @@ namespace _00_Main._01_Scripts.Demo
         [SerializeField] private Color tintColor = new Color(1f, 1f, 1f, 0.6f);
 
         [Header("Sorting")]
-        [SerializeField] private string sortingLayerName = "Default";
+        [SerializeField] private string sortingLayerName;
         [SerializeField] private int sortingOrder = 100;
 
         private Mesh _mesh;
@@ -42,7 +42,6 @@ namespace _00_Main._01_Scripts.Demo
         // 이전 프레임과 비교해서 실제로 모양/위치가 바뀌었을 때만 메쉬를 다시 만듦
         private Vector3Int _lastCellPosition;
         private int _lastOffsetsLength = -1;
-        private bool _lastHasHover;
         private bool _initialized;
 
         // 스프라이트가 바뀌면 텍스처/UV 영역도 다시 계산해야 함
@@ -141,7 +140,7 @@ namespace _00_Main._01_Scripts.Demo
 
         private void LateUpdate()
         {
-            if (!_isIndicatorActive || tileBreakDemo == null) return;
+            if (!_isIndicatorActive || tileBreaker == null) return;
 
             // 인스펙터에서 런타임 중 스프라이트를 바꿨을 수도 있으니 확인
             if (_cachedSprite != highlightSprite)
@@ -149,31 +148,30 @@ namespace _00_Main._01_Scripts.Demo
                 ApplyTexture();
             }
 
-            bool hasHover = tileBreakDemo.TryGetHoverCell(
-                out Tilemap hitTilemap, out Vector3Int cellPosition, out _);
+            bool hasPointerCell = tileBreaker.TryGetPointerCell(
+                out Tilemap referenceTilemap, out Vector3Int cellPosition);
 
-            Vector3Int[] offsets = tileBreakDemo.ShapeOffsets;
+            Vector3Int[] offsets = tileBreaker.ShapeOffsets;
             int offsetsLength = offsets?.Length ?? 0;
 
             bool unchanged = _initialized
-                              && hasHover == _lastHasHover
+                              && hasPointerCell
                               && cellPosition == _lastCellPosition
                               && offsetsLength == _lastOffsetsLength;
 
             if (unchanged) return;
 
             _initialized = true;
-            _lastHasHover = hasHover;
             _lastCellPosition = cellPosition;
             _lastOffsetsLength = offsetsLength;
 
-            if (!hasHover || offsetsLength == 0)
+            if (!hasPointerCell || offsetsLength == 0)
             {
                 _mesh.Clear();
                 return;
             }
 
-            BuildMesh(hitTilemap, cellPosition, offsets);
+            BuildMesh(referenceTilemap, cellPosition, offsets);
         }
 
         private void BuildMesh(Tilemap hitTilemap, Vector3Int cellPosition, Vector3Int[] offsets)

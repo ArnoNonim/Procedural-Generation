@@ -11,9 +11,12 @@ namespace _00_Main._01_Scripts.SO
         public event Action<bool> OnCursorClicked;
         public event Action<bool> OnCursorToggle;
         
-        [field:SerializeField] public float ScrollAxis { get; private set; }
+        [field:SerializeField] public float ScrollY { get; private set; }
+        [field:SerializeField] public bool IsClicking { get; private set; }
+        [field:SerializeField] public bool IsShift { get; private set; }  
         
         private Controls _controls;
+
         
         public void OnMove(InputAction.CallbackContext context)
         {
@@ -21,13 +24,18 @@ namespace _00_Main._01_Scripts.SO
             OnMovementChange?.Invoke(moveDir);
         }
 
-        public void OnClick(InputAction.CallbackContext context)
+        public void OnMouseLeftClick(InputAction.CallbackContext context)
         {
             if (context.performed)
+            {
                 OnCursorClicked?.Invoke(true);
+                IsClicking = true;
+            }
             else if (context.canceled)
+            {
                 OnCursorClicked?.Invoke(false);
-            Debug.Log("뿡");
+                IsClicking = false;
+            }
         }
         
         public void OnCurTgl(InputAction.CallbackContext context)
@@ -38,9 +46,17 @@ namespace _00_Main._01_Scripts.SO
                 OnCursorToggle?.Invoke(false);
         }
 
-        public void OnBreakAreaScroll(InputAction.CallbackContext context)
+        public void OnMouseScroll(InputAction.CallbackContext context)
         {
-            ScrollAxis = context.ReadValue<float>();
+            ScrollY = context.ReadValue<float>();
+        }
+
+        public void OnShift(InputAction.CallbackContext context)
+        {
+            if(context.performed)
+                IsShift = true;
+            else if(context.canceled)
+                IsShift = false;
         }
 
         private void OnEnable()

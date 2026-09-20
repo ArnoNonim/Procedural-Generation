@@ -20,11 +20,14 @@ namespace _00_Main._01_Scripts.Demo
         [Range(0f, 1f)] public float threshold; // 이 값 이상이면 이 티어로 채워짐
     }
 
-    public class TilemapDemo : MonoBehaviour
+    public class TilemapGenerator : MonoBehaviour
     {
-        // 로딩 UI 등 외부에서 구독할 이벤트
         public event Action OnGenerationStarted;
         public event Action OnGenerationCompleted;
+        
+        public event Action<float> OnGenerationProgressChanged;
+        public float GenerationProgress { get; private set; }
+
 
         [Header("Tiers (threshold)")]
         [SerializeField] private TierLayer[] tiers;
@@ -47,20 +50,14 @@ namespace _00_Main._01_Scripts.Demo
         [SerializeField] private int rowsPerBand = 16;
         [SerializeField] private double frameBudgetMs = 8.0;
 
+        private const float ApplyTilesStartProgress = 0.15f;
+
         private NativeArray<float> _elevation;  // width*height
-        private NativeArray<float> _thresholds; // tiers.Length
         private JobHandle _jobHandle;
         private bool _isGenerating;
 
         private Coroutine _applyRoutine;
         private TileBase[][] _managedTilesPerTier; // 밴드 크기(width*rowsPerBand)로 재사용되는 버퍼
-
-        private BoundsInt _bounds;
-
-        private void Start()
-        {
-            GenerateNewMap();
-        }
 
         private void Update()
         {
@@ -74,25 +71,25 @@ namespace _00_Main._01_Scripts.Demo
                 _jobHandle.Complete();
                 _isGenerating = false;
 
+                SetGenerationProgress(ApplyTilesStartProgress);
                 _applyRoutine = StartCoroutine(ApplyTilesRoutine());
             }
+        }
+        
+        private void SetGenerationProgress(float value)
+        {
+            value = Mathf.Clamp01(value);
+
+            if (Mathf.Approximately(GenerationProgress, value))
+                return;
+
+            GenerationProgress = value;
+            OnGenerationProgressChanged?.Invoke(value);
         }
 
         private void GenerateNewMap()
         {
-            // 이전 Job이 실행 중이면 안전하게 완료 후 메모리 해제
-            if (_isGenerating)
-            {
-                _jobHandle.Complete();
-                DisposeJobData();
-            }
-
-            // 이전 타일 적용 코루틴이 돌고 있으면 중단 (중복 적용 방지)
-            if (_applyRoutine != null)
-            {
-                StopCoroutine(_applyRoutine);
-                _applyRoutine = null;
-            }
+            StopActiveGeneration();
 
             if (randomSeed)
             {
@@ -114,38 +111,33 @@ namespace _00_Main._01_Scripts.Demo
             }
 
             _elevation = new NativeArray<float>(cellCount, Allocator.Persistent);
-            _thresholds = new NativeArray<float>(tiers.Length, Allocator.Persistent);
-
-            for (int i = 0; i < tiers.Length; i++)
-            {
-                _thresholds[i] = tiers[i].threshold;
-            }
-
-            int startX = -width / 2;
-            int startY = -height / 2;
-            _bounds = new BoundsInt(startX, startY, 0, width, height, 1);
 
             var job = new ComputeElevationJob
             {
-                width = width,
-                height = height,
-                noiseScale = noiseScale,
-                octaves = octaves,
-                persistence = persistence,
-                lacunarity = lacunarity,
-                edgeFalloff = edgeFalloff,
-                seed = seed,
-                results = _elevation
+                Width = width,
+                Height = height,
+                NoiseScale = noiseScale,
+                Octaves = octaves,
+                Persistence = persistence,
+                Lacunarity = lacunarity,
+                EdgeFalloff = edgeFalloff,
+                Seed = seed,
+                Results = _elevation
             };
 
             _jobHandle = job.Schedule(cellCount, 64);
             _isGenerating = true;
 
+            SetGenerationProgress(0f);
             OnGenerationStarted?.Invoke();
         }
 
         private IEnumerator ApplyTilesRoutine()
         {
+            int bandsPerTier = Mathf.CeilToInt(height / (float)rowsPerBand);
+            int totalBands = tiers.Length * bandsPerTier;
+            int completedBands = 0;
+            
             int startX = -width / 2;
             int startY = -height / 2;
 
@@ -184,6 +176,11 @@ namespace _00_Main._01_Scripts.Demo
                         Array.Copy(bandTiles, trimmed, bandCellCount);
                         tiers[t].tilemap.SetTilesBlock(bandBounds, trimmed);
                     }
+                    
+                    completedBands++;
+
+                    float applyProgress = completedBands / (float)totalBands;
+                    SetGenerationProgress(Mathf.Lerp(ApplyTilesStartProgress, 1f, applyProgress));
 
                     // 고정 프레임 양보 대신, 예산 초과했을 때만 양보
                     if (stopwatch.Elapsed.TotalMilliseconds >= frameBudgetMs)
@@ -197,7 +194,26 @@ namespace _00_Main._01_Scripts.Demo
             DisposeJobData();
             _applyRoutine = null;
 
+            SetGenerationProgress(1f);
             OnGenerationCompleted?.Invoke();
+        }
+
+        private void StopActiveGeneration()
+        {
+            if (_isGenerating)
+            {
+                _jobHandle.Complete();
+                _isGenerating = false;
+            }
+
+            if (_applyRoutine != null)
+            {
+                StopCoroutine(_applyRoutine);
+                _applyRoutine = null;
+            }
+
+            // 코루틴을 중단하면 마지막의 DisposeJobData가 실행되지 않으므로 여기서 항상 정리함.
+            DisposeJobData();
         }
 
         private void DisposeJobData()
@@ -207,25 +223,19 @@ namespace _00_Main._01_Scripts.Demo
                 _elevation.Dispose();
             }
 
-            if (_thresholds.IsCreated)
-            {
-                _thresholds.Dispose();
-            }
         }
 
         private void OnDestroy()
         {
-            if (_isGenerating)
-            {
-                _jobHandle.Complete();
-            }
+            StopActiveGeneration();
+        }
 
-            if (_applyRoutine != null)
-            {
-                StopCoroutine(_applyRoutine);
-            }
-
-            DisposeJobData();
+        private void OnValidate()
+        {
+            width = Mathf.Max(1, width);
+            height = Mathf.Max(1, height);
+            rowsPerBand = Mathf.Max(1, rowsPerBand);
+            frameBudgetMs = Math.Max(0.1, frameBudgetMs);
         }
 
         [BurstCompile(
@@ -234,30 +244,30 @@ namespace _00_Main._01_Scripts.Demo
         )]
         private struct ComputeElevationJob : IJobParallelFor
         {
-            public int width;
-            public int height;
-            public float noiseScale;
-            public int octaves;
-            public float persistence;
-            public float lacunarity;
-            public float2 seed;
+            public int Width;
+            public int Height;
+            public float NoiseScale;
+            public int Octaves;
+            public float Persistence;
+            public float Lacunarity;
+            public float2 Seed;
 
             [Range(0f, 1f)]
-            public float edgeFalloff;
+            public float EdgeFalloff;
 
             [WriteOnly]
-            public NativeArray<float> results;
+            public NativeArray<float> Results;
 
             public void Execute(int index)
             {
-                int x = index % width;
-                int y = index / width;
+                int x = index % Width;
+                int y = index / Width;
 
-                float noiseValue = CalculateFbm(new float2(x, y) * noiseScale);
+                float noiseValue = CalculateFbm(new float2(x, y) * NoiseScale);
 
                 // 좌표를 -1 ~ 1 범위로 정규화
-                float normalizedX = ((x / (float)(width - 1)) * 2f) - 1f;
-                float normalizedY = ((y / (float)(height - 1)) * 2f) - 1f;
+                float normalizedX = Width > 1 ? ((x / (float)(Width - 1)) * 2f) - 1f : 0f;
+                float normalizedY = Height > 1 ? ((y / (float)(Height - 1)) * 2f) - 1f : 0f;
 
                 // 중심: 0 / 모서리: 1
                 float distanceFromCenter = math.length(new float2(normalizedX, normalizedY));
@@ -266,9 +276,9 @@ namespace _00_Main._01_Scripts.Demo
                 float centerMask = math.saturate(1f - distanceFromCenter);
 
                 // 가장자리에서 노이즈를 감쇠
-                noiseValue *= math.lerp(1f, centerMask, edgeFalloff);
+                noiseValue *= math.lerp(1f, centerMask, EdgeFalloff);
 
-                results[index] = noiseValue; // 0~1 연속값 저장, 티어마다 따로 threshold 비교
+                Results[index] = noiseValue; // 0~1 연속값 저장, 티어마다 따로 threshold 비교
             }
 
             private float CalculateFbm(float2 position)
@@ -278,17 +288,17 @@ namespace _00_Main._01_Scripts.Demo
                 float amplitude = 1f;
                 float maxValue = 0f;
 
-                for (int i = 0; i < octaves; i++)
+                for (int i = 0; i < Octaves; i++)
                 {
-                    // snoise 범위: -1 ~ 1 → 0 ~ 1로 변환
-                    float value = noise.snoise((seed + position) * frequency);
+                    // noise 범위: -1 ~ 1 → 0 ~ 1로 변환
+                    float value = noise.snoise((Seed + position) * frequency);
                     value = value * 0.5f + 0.5f;
 
                     total += value * amplitude;
                     maxValue += amplitude;
 
-                    amplitude *= persistence;
-                    frequency *= lacunarity;
+                    amplitude *= Persistence;
+                    frequency *= Lacunarity;
                 }
 
                 return total / maxValue;
