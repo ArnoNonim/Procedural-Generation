@@ -1,13 +1,31 @@
 {
   "dependencies": {
     "com.codewriter.triinspector": {
-      "version": "https://github.com/codewriter-packages/Tri-Inspector.git",
+      "version": "file:com.codewriter.triinspector",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.localization": "1.0.0"
+      }
+    },
+    "com.coffee.ui-particle": {
+      "version": "https://github.com/mob-sakai/ParticleEffectForUGUI.git",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.unity.localization": "1.0.0"
+        "com.unity.ugui": "1.0.0",
+        "com.unity.modules.particlesystem": "1.0.0"
       },
-      "hash": "d07f23676b1babffa792bfc9e694e8ff269f9ac8"
+      "hash": "eec288e2a5cfd43743b70e9a8c397d5e5300e80a"
+    },
+    "com.qiaozhilei.easy-text-effects": {
+      "version": "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
+      "hash": "102249bba7e95ec4f3c3cfbaf4f0afd9b1b4ccce"
     },
     "com.unity.2d.animation": {
       "version": "15.1.0",

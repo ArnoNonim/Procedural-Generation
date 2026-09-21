@@ -1,0 +1,13 @@
+{
+  "name": "com.codewriter.triinspector",
+  "displayName": "Tri Inspector",
+  "description": "Advanced inspector attributes for Unity",
+  "version": "2.0.0",
+  "unity": "6000.0",
+  "author": "CodeWriter (https://github.com/orgs/codewriter-packages)",
+  "homepage": "https://github.com/codewriter-packages/Tri-Inspector#readme",
+  "dependencies": {
+    "com.unity.localization": "1.0.0"
+  },
+  "_fingerprint": "d07f23676b1babffa792bfc9e694e8ff269f9ac8"
+}

@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71dbe4248f2f437aad0af2c8b76cbce8, type: 3}
+  m_Name: ProgressingTitleText
+  m_EditorClassIdentifier: Assembly-CSharp::_00_Main._01_Scripts.SO.TextSO
+  textString: "\uB9F5 \uC0DD\uC131\uC911"
+  <TextLength>k__BackingField: 5
